@@ -18,18 +18,19 @@ http.createServer(function (req, res) {
         'Content-Type': 'text/plain'
     });
 
+    var post_data = "";
     if (req.method == 'POST') {
         req.addListener('data', function (chunk) {
-            POST = querystring.parse(chunk);
+            post_data += querystring.parse(chunk);
         }).addListener('end', function () {
             var data_path = path.resolve('./data');
-            var key = POST.key;
-            var secret = POST.secret;
-            var bucket = POST.bucket;
-            var dir = POST.dir;
-            var filename = POST.filename;
-            var stubidx = POST.stubidx;
-            var db_name = POST.db_name;
+            var key = post_data.key;
+            var secret = post_data.secret;
+            var bucket = post_data.bucket;
+            var dir = post_data.dir;
+            var filename = post_data.filename;
+            var stubidx = post_data.stubidx;
+            var db_name = post_data.db_name;
 
             // create the s3 client
             var client = knox.createClient({
