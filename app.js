@@ -17,74 +17,79 @@ http.createServer(function (req, res) {
     res.writeHead(200, {
         'Content-Type': 'text/plain'
     });
-    var data_path = path.resolve('./data');
-    var parsed_url = url.parse(req.url, true);
-    var key = parsed_url.query.key;
-    var secret = parsed_url.query.secret;
-    var bucket = parsed_url.query.bucket;
-    var dir = parsed_url.query.dir;
-    var filename = parsed_url.query.filename;
-    var stubidx = parsed_url.query.stubidx;
-    var db_name = parsed_url.query.db_name;
 
-    // create the s3 client
-    var client = knox.createClient({
-        key: key,
-        secret: secret,
-        bucket: bucket
-    });
+    if (req.method == 'POST') {
+        req.addListener('data', function (chunk) {
+            POST = querystring.parse(chunk);
+        }).addListener('end', function () {
+            var data_path = path.resolve('./data');
+            var key = POST.key;
+            var secret = POST.secret;
+            var bucket = POST.bucket;
+            var dir = POST.dir;
+            var filename = POST.filename;
+            var stubidx = POST.stubidx;
+            var db_name = POST.db_name;
 
-    // request the s3 document
-    client.get(dir + "/" + filename).on('response', function (s3_res) {
-        var outstream = fs.createWriteStream("./data/" + filename);
-        console.log(s3_res.statusCode);
-        console.log(s3_res.headers);
-
-        // stream the document to disk chunk by chunk
-        s3_res.on('data', function (chunk) {
-            outstream.write(chunk);
-        });
-
-        // the file has been saved! now let's build the autonomy request
-        s3_res.on('end', function () {
-            outstream.end();
-            var path_to_file = data_path + "/" + filename;
-            var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\"/></autn:document></autn:envelope></autn:import>";
-            console.log(xml);
-
-            var post_data = querystring.stringify({
-                'Data': stubidx,
-                'DREDBNAME': db_name,
-                'EnvelopeXML': xml,
-                'jobname': 'ImportEnvelopeJob',
-                'EnvelopeImportFailOnImport': 'never'
+            // create the s3 client
+            var client = knox.createClient({
+                key: key,
+                secret: secret,
+                bucket: bucket
             });
 
-            var http_options = {
-                host: 'localhost',
-                port: 7000,
-                path: '/',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'Content-Length': post_data.length
-                }
-            };
+            // request the s3 document
+            client.get(dir + "/" + filename).on('response', function (s3_res) {
+                var outstream = fs.createWriteStream("./data/" + filename);
+                console.log(s3_res.statusCode);
+                console.log(s3_res.headers);
 
-            // post to autonomy to index the document
-            var post_req = http.request(http_options, function (res) {
-                res.setEncoding('utf8');
-                res.on('data', function (chunk) {
-                    console.log('Response: ' + chunk);
+                // stream the document to disk chunk by chunk
+                s3_res.on('data', function (chunk) {
+                    outstream.write(chunk);
                 });
-                res.on('error', function (e) {
-                    console.log('problem with request: ' + e.message);
+
+                // the file has been saved! now let's build the autonomy request
+                s3_res.on('end', function () {
+                    outstream.end();
+                    var path_to_file = data_path + "/" + filename;
+                    var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\"/></autn:document></autn:envelope></autn:import>";
+                    console.log(xml);
+
+                    var post_data = querystring.stringify({
+                        'Data': stubidx,
+                        'DREDBNAME': db_name,
+                        'EnvelopeXML': xml,
+                        'jobname': 'ImportEnvelopeJob',
+                        'EnvelopeImportFailOnImport': 'never'
+                    });
+
+                    var http_options = {
+                        host: 'localhost',
+                        port: 7000,
+                        path: '/',
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Content-Length': post_data.length
+                        }
+                    };
+
+                    // post to autonomy to index the document
+                    var post_req = http.request(http_options, function (res) {
+                        res.setEncoding('utf8');
+                        res.on('data', function (chunk) {
+                            console.log('Response: ' + chunk);
+                        });
+                        res.on('error', function (e) {
+                            console.log('problem with request: ' + e.message);
+                        });
+                    });
+
+                    res.end('thanks');
                 });
             });
-
         });
-    }).end();
-
-    res.end(parsed_url.query.name + '\n');
+    }
 }).listen(1337);
 console.log('Server running at http://127.0.0.1:1337/');
