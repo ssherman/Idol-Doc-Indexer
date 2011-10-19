@@ -24,7 +24,7 @@ http.createServer(function (req, res) {
             post_data += chunk;
         }).addListener('end', function () {
             res.end('thanks');
-            post_data = querystring.parse(chunk);
+            post_data = querystring.parse(post_data);
             var data_path = path.resolve('./data');
             var key = post_data.key;
             var secret = post_data.secret;
