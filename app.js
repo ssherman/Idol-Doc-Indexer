@@ -21,8 +21,10 @@ http.createServer(function (req, res) {
     var post_data = "";
     if (req.method == 'POST') {
         req.addListener('data', function (chunk) {
-            post_data += querystring.parse(chunk);
+            post_data += chunk;
         }).addListener('end', function () {
+            res.end('thanks');
+            post_data = querystring.parse(chunk);
             var data_path = path.resolve('./data');
             var key = post_data.key;
             var secret = post_data.secret;
@@ -39,6 +41,7 @@ http.createServer(function (req, res) {
                 bucket: bucket
             });
 
+            console.log("submitting the s3 request to download the document");
             // request the s3 document
             client.get(dir + "/" + filename).on('response', function (s3_res) {
                 var outstream = fs.createWriteStream("./data/" + filename);
@@ -52,6 +55,7 @@ http.createServer(function (req, res) {
 
                 // the file has been saved! now let's build the autonomy request
                 s3_res.on('end', function () {
+                    console.log("Submitting the data to autonomy filesystemfetch");
                     outstream.end();
                     var path_to_file = data_path + "/" + filename;
                     var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\"/></autn:document></autn:envelope></autn:import>";
@@ -86,8 +90,6 @@ http.createServer(function (req, res) {
                             console.log('problem with request: ' + e.message);
                         });
                     });
-
-                    res.end('thanks');
                 });
             });
         });
