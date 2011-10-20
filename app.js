@@ -61,7 +61,7 @@ http.createServer(function (req, res) {
                     var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\"/></autn:document></autn:envelope></autn:import>";
                     console.log(xml);
 
-                    var post_data = querystring.stringify({
+                    var idol_data = querystring.stringify({
                         'Data': stubidx,
                         'DREDBNAME': db_name,
                         'EnvelopeXML': xml,
@@ -76,7 +76,7 @@ http.createServer(function (req, res) {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            'Content-Length': post_data.length
+                            'Content-Length': idol_data.length
                         }
                     };
 
@@ -90,6 +90,10 @@ http.createServer(function (req, res) {
                             console.log('problem with request: ' + e.message);
                         });
                     });
+                      
+                    // post the data
+                    post_req.write(idol_data);
+                    post_req.end();
                 });
             }).end();
         });
