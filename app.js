@@ -29,7 +29,7 @@ http.createServer(function (req, res) {
             var key = post_data.key;
             var secret = post_data.secret;
             var bucket = post_data.bucket;
-            var dir = post_data.dir;
+            var file_s3_key = post_data.file_s3_key;
             var filename = post_data.filename;
             var stubidx = post_data.stubidx;
             var db_name = post_data.db_name;
@@ -43,7 +43,7 @@ http.createServer(function (req, res) {
 
             console.log("submitting the s3 request to download the document");
             // request the s3 document
-            client.get(dir + "/" + filename).on('response', function (s3_res) {
+            client.get(file_s3_key).on('response', function (s3_res) {
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
                 var outstream = fs.createWriteStream("./data/" + filename);
