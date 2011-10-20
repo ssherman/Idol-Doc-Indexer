@@ -29,7 +29,7 @@ http.createServer(function (req, res) {
             var key = post_data.key;
             var secret = post_data.secret;
             var bucket = post_data.bucket;
-            var file_s3_key = querystring.stringify(post_data.file_s3_key);
+            var file_s3_key = encodeURIComponent(post_data.file_s3_key);
             var filename = post_data.filename;
             var stubidx = post_data.stubidx;
             var db_name = post_data.db_name;
@@ -45,8 +45,8 @@ http.createServer(function (req, res) {
             // request the s3 document
             client.get(file_s3_key).on('response', function (s3_res) {
                 console.log("downloading " + file_s3_key + " from s3...");
-                console.log("status code from s3: " + s3_res.statusCode);
-                console.log("headers from s3: " + s3_res.headers);
+                console.log(s3_res.statusCode);
+                console.log(s3_res.headers);
                 var outstream = fs.createWriteStream("./data/" + filename);
 
                 // stream the document to disk chunk by chunk
