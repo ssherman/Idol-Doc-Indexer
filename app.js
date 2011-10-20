@@ -47,7 +47,7 @@ http.createServer(function (req, res) {
                 console.log("downloading " + file_s3_key + " from s3...");
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
-                fs.mkdir(dir_to_save_docs_to + db_name);
+                fs.mkdir(dir_to_save_docs_to + db_name, 0755);
                 var path_to_file = dir_to_save_docs_to + db_name + "/" + filename;
                 var outstream = fs.createWriteStream(path_to_file);
 
