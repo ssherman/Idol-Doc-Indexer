@@ -44,9 +44,9 @@ http.createServer(function (req, res) {
             console.log("submitting the s3 request to download the document");
             // request the s3 document
             client.get(dir + "/" + filename).on('response', function (s3_res) {
-                var outstream = fs.createWriteStream("./data/" + filename);
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
+                var outstream = fs.createWriteStream("./data/" + filename);
 
                 // stream the document to disk chunk by chunk
                 s3_res.on('data', function (chunk) {
@@ -91,7 +91,7 @@ http.createServer(function (req, res) {
                         });
                     });
                 });
-            });
+            }).end();
         });
     }
 }).listen(1337);
