@@ -72,7 +72,7 @@ http.createServer(function (req, res) {
                     var http_options = {
                         host: 'localhost',
                         port: 7000,
-                        path: '/',
+                        path: '/action=ImportEnvelope',
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
