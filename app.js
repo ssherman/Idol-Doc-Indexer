@@ -6,7 +6,11 @@ var path = require('path');
 var querystring = require('querystring');
 var dir_to_save_docs_to = "/mnt/Autonomy/filesystemfetch_queue/";
 
+
+// create the tiny http server
 http.createServer(function (req, res) {
+
+    // chrome always requests a favicon.ico for everything. We need to ignore it
     if (req.url === '/favicon.ico') {
         res.writeHead(200, {
             'Content-Type': 'image/x-icon'
@@ -21,8 +25,13 @@ http.createServer(function (req, res) {
 
     var post_data = "";
     if (req.method == 'POST') {
+        
+        // chunk the form post data
         req.addListener('data', function (chunk) {
             post_data += chunk;
+
+        // the form post data has all been submitted. Let's parse it and use
+        // the data to pull docs out of s3, save to disk, then submit to autonomy
         }).addListener('end', function () {
             res.end('thanks');
             post_data = querystring.parse(post_data);
@@ -47,10 +56,13 @@ http.createServer(function (req, res) {
                 console.log("downloading " + file_s3_key + " from s3...");
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
+
+                // create a directory with the same name as the db on the autonomy server
                 fs.mkdir(dir_to_save_docs_to + db_name, 0755, function(e) {
                   var path_to_file = dir_to_save_docs_to + db_name + "/" + filename;
-                  var outstream = fs.createWriteStream(path_to_file);
+
                   // stream the document to disk chunk by chunk
+                  var outstream = fs.createWriteStream(path_to_file);
                   s3_res.on('data', function (chunk) {
                       outstream.write(chunk);
                   });
