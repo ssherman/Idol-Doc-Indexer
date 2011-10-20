@@ -47,56 +47,57 @@ http.createServer(function (req, res) {
                 console.log("downloading " + file_s3_key + " from s3...");
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
-                fs.mkdir(dir_to_save_docs_to + db_name, 0755);
-                var path_to_file = dir_to_save_docs_to + db_name + "/" + filename;
-                var outstream = fs.createWriteStream(path_to_file);
+                fs.mkdir(dir_to_save_docs_to + db_name, 0755, function(e) {
+                  var path_to_file = dir_to_save_docs_to + db_name + "/" + filename;
+                  var outstream = fs.createWriteStream(path_to_file);
+                  // stream the document to disk chunk by chunk
+                  s3_res.on('data', function (chunk) {
+                      outstream.write(chunk);
+                  });
 
-                // stream the document to disk chunk by chunk
-                s3_res.on('data', function (chunk) {
-                    outstream.write(chunk);
+                  // the file has been saved! now let's build the autonomy request
+                  s3_res.on('end', function () {
+                      console.log("Submitting the data to autonomy filesystemfetch");
+                      outstream.end();
+                      var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\" deleteoriginal=\"true\" /></autn:document></autn:envelope></autn:import>";
+                      console.log(xml);
+
+                      var idol_data = querystring.stringify({
+                          'Data': stubidx,
+                          'DREDBNAME': db_name,
+                          'EnvelopeXML': xml,
+                          'jobname': 'ImportEnvelopeJob',
+                          'EnvelopeImportFailOnImport': 'never'
+                      });
+
+                      var http_options = {
+                          host: 'localhost',
+                          port: 7000,
+                          path: '/action=ImportEnvelope',
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/x-www-form-urlencoded',
+                              'Content-Length': idol_data.length
+                          }
+                      };
+
+                      // post to autonomy to index the document
+                      var post_req = http.request(http_options, function (res) {
+                          res.setEncoding('utf8');
+                          res.on('data', function (chunk) {
+                              console.log('Response: ' + chunk);
+                          });
+                          res.on('error', function (e) {
+                              console.log('problem with request: ' + e.message);
+                          });
+                      });
+                        
+                      // post the data
+                      post_req.write(idol_data);
+                      post_req.end();
+                  });
                 });
 
-                // the file has been saved! now let's build the autonomy request
-                s3_res.on('end', function () {
-                    console.log("Submitting the data to autonomy filesystemfetch");
-                    outstream.end();
-                    var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\" deleteoriginal=\"true\" /></autn:document></autn:envelope></autn:import>";
-                    console.log(xml);
-
-                    var idol_data = querystring.stringify({
-                        'Data': stubidx,
-                        'DREDBNAME': db_name,
-                        'EnvelopeXML': xml,
-                        'jobname': 'ImportEnvelopeJob',
-                        'EnvelopeImportFailOnImport': 'never'
-                    });
-
-                    var http_options = {
-                        host: 'localhost',
-                        port: 7000,
-                        path: '/action=ImportEnvelope',
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'Content-Length': idol_data.length
-                        }
-                    };
-
-                    // post to autonomy to index the document
-                    var post_req = http.request(http_options, function (res) {
-                        res.setEncoding('utf8');
-                        res.on('data', function (chunk) {
-                            console.log('Response: ' + chunk);
-                        });
-                        res.on('error', function (e) {
-                            console.log('problem with request: ' + e.message);
-                        });
-                    });
-                      
-                    // post the data
-                    post_req.write(idol_data);
-                    post_req.end();
-                });
             }).end();
         });
     }
