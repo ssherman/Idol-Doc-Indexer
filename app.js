@@ -4,6 +4,7 @@ var url = require('url');
 var fs = require('fs');
 var path = require('path');
 var querystring = require('querystring');
+var dir_to_save_docs_to = "/mnt/Autonomy/filesystemfetch_queue/";
 
 http.createServer(function (req, res) {
     if (req.url === '/favicon.ico') {
@@ -25,7 +26,6 @@ http.createServer(function (req, res) {
         }).addListener('end', function () {
             res.end('thanks');
             post_data = querystring.parse(post_data);
-            var data_path = path.resolve('./data');
             var key = post_data.key;
             var secret = post_data.secret;
             var bucket = post_data.bucket;
@@ -47,7 +47,9 @@ http.createServer(function (req, res) {
                 console.log("downloading " + file_s3_key + " from s3...");
                 console.log(s3_res.statusCode);
                 console.log(s3_res.headers);
-                var outstream = fs.createWriteStream("./data/" + filename);
+                fs.mkdir(dir_to_save_docs_to + db_name);
+                var path_to_file = dir_to_save_docs_to + db_name + "/" + filename;
+                var outstream = fs.createWriteStream(path_to_file);
 
                 // stream the document to disk chunk by chunk
                 s3_res.on('data', function (chunk) {
@@ -58,7 +60,6 @@ http.createServer(function (req, res) {
                 s3_res.on('end', function () {
                     console.log("Submitting the data to autonomy filesystemfetch");
                     outstream.end();
-                    var path_to_file = data_path + "/" + filename;
                     var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\" deleteoriginal=\"true\" /></autn:document></autn:envelope></autn:import>";
                     console.log(xml);
 
