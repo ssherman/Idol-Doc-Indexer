@@ -59,7 +59,7 @@ http.createServer(function (req, res) {
                     console.log("Submitting the data to autonomy filesystemfetch");
                     outstream.end();
                     var path_to_file = data_path + "/" + filename;
-                    var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\"/></autn:document></autn:envelope></autn:import>";
+                    var xml = "<?xml version=\"1.0\"?><autn:import><autn:envelope><autn:stubidx><![CDATA[" + stubidx + "]]></autn:stubidx><autn:document><autn:fetch url=\"" + path_to_file + "\" deleteoriginal=true/></autn:document></autn:envelope></autn:import>";
                     console.log(xml);
 
                     var idol_data = querystring.stringify({
