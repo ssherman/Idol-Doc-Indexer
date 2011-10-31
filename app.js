@@ -107,38 +107,20 @@ app.use(connect.router(function (app) {
         res.end('indexing job successfully submitted');
     });
     app.get('/unindex/:database/:drereference', function (req, res, next) {
-        var idol_data = querystring.stringify({
-            'Docs': req.params.drereference,
-            'DREDbName': req.params.database
-        });
-
-        console.log(idol_data);
 
         var http_options = {
             host: 'localhost',
             port: 9001,
-            path: '/DREDELETEREF',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Content-Length': idol_data.length
-            }
+            path: '/DREDELETEREF?Docs=' + req.params.drereference + '&DREDbName=' + req.params.database
         };
 
         // post to autonomy to index the document
-        var post_req = http.request(http_options, function (res) {
-            res.setEncoding('utf8');
-            res.on('data', function (chunk) {
-                console.log('Response: ' + chunk);
-            });
-            res.on('error', function (e) {
-                console.log('problem with request: ' + e.message);
-            });
+        var unindex_request = http.get(http_options, function(res) {
+          console.log("unindex response: " + res.statusCode);
+        }).on('error', function(e) {
+          console.log("unindex error: " + e.message);
         });
 
-        // post the data
-        post_req.write(idol_data);
-        post_req.end();
         res.writeHead(200, {
             'Content-Type': 'text/plain'
         });
