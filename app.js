@@ -112,6 +112,8 @@ app.use(connect.router(function (app) {
             'DREDbName': req.params.database
         });
 
+        console.log(idol_data);
+
         var http_options = {
             host: 'localhost',
             port: 9001,
