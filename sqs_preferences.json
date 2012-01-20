@@ -1,0 +1,6 @@
+{
+	"aws_key":"blahblahblah", 
+	"aws_secret":"secret", 
+	"docs_dir":"./tmp/"
+	"sqs_queue_path":"/<some number>/queue_name"
+}
