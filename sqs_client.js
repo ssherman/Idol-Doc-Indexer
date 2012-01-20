@@ -19,24 +19,25 @@ var sqs_queue_path = data.sqs_queue_path;
 var dir_to_save_docs_to = data.docs_dir;
 
 
-
-// TODO: add to preferences.json file
 var options = {
 	'path': sqs_queue_path
 };
 
 var sqs_poller = new SqsPoller(aws_key, aws_secret_key, options, 1000, 30000, 5000);
+
+// this event is called when there are new messages on the queue
 sqs_poller.on('new_messages', function(message, sqs) {
     var message_id = message.MessageId;
+
+    // the body is json
     var body = message.Body;
     var receipt_handle = message.ReceiptHandle;
 
     console.log("message_id: " + message_id + ", body: " + body);
-    // autonomy magic goes here!
 
     var json_data = JSON.parse(body);
-    var reference = json_data.reference;
-    var db = json_data.db;
+
+    // the action will be either index or unindex
     var action = json_data.action;
 
     // ***** UNINDEX ****** //
@@ -46,19 +47,31 @@ sqs_poller.on('new_messages', function(message, sqs) {
     // ****** INDEX ****** //
     } else if ( json_data.action == "index" ) {
         index(json_data, receipt_handle, sqs);
+    // ****** unknown message. lets just delete it so we don't keep getting it ****** //
+    } else {
+        sqs.call('DeleteMessage', {'ReceiptHandle':receipt_handle}, function(result) {
+           console.log("delete result: " + result);
+        });
     }
 
 });
 
+// this handles error cases like if sqs can not connect at all or the queue is invalid
 sqs_poller.on('error', function(message, sqs) {
    console.log('Error: ' + message); 
 });
 
+// Unindex a document from autonomy. 
+// json_data - data required to unindex an autonomy db
+// receipt_handle - id required to delete/confirm a message from a sqs queue
 function unindex(json_data, receipt_handle, sqs) {
+
+    // unique autonomy id
     var reference = json_data.reference;
+
+    // each customer has their own autonomy db
     var db = json_data.db;
-    console.log("unindex");
-    console.log("reference: " + reference + ", db: " + db);
+    console.log("unindex reference: " + reference + ", db: " + db);
 
     var http_options = {
         host: 'localhost',
@@ -66,10 +79,12 @@ function unindex(json_data, receipt_handle, sqs) {
         path: '/DREDELETEREF?Docs=' + reference + '&DREDbName=' + db
     };
 
-    // post to autonomy to index the document
+    // post to autonomy to unindex the document
     var unindex_request = http.get(http_options, function (res) {
 
         console.log("unindex response: " + res.statusCode);
+
+        // delete the sqs message so the queue won't continuously read it
         sqs.call('DeleteMessage', {'ReceiptHandle':receipt_handle}, function(result) {
            console.log("delete result: " + result);
         });
@@ -79,6 +94,13 @@ function unindex(json_data, receipt_handle, sqs) {
    });
 }
 
+// index a document into autonomy. Only documents that can be cracked(pdf, word, xls, ppt).
+// go through this method of indexing.
+//
+// Basically what happens is we download the document from an s3 bucket, write it to the
+// filesystem, then create an autonomy index request pointing to the location on the
+// filesystem.
+// json_data = data required to index a document
 function index(json_data, receipt_handle, sqs) {
 
     var key = json_data.s3_aws_key;
@@ -98,6 +120,7 @@ function index(json_data, receipt_handle, sqs) {
 
     console.log("submitting the s3 request to download the document");
     var s3_path = file_id + '/' + querystring.escape(file_name);
+    
     // request the s3 document
     client.get(s3_path).on('response', function (s3_res) {
         console.log("downloading " + s3_path + " from s3...");
