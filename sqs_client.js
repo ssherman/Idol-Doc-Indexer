@@ -14,7 +14,7 @@ var pref_file = fs.readFileSync('sqs_preferences.json', 'utf8');
 var data = JSON.parse(pref_file);
 
 var aws_key = data.aws_key;
-var aws_secret_key = data.aws_secret_key;
+var aws_secret_key = data.aws_secret;
 var sqs_queue_path = data.sqs_queue_path;
 var dir_to_save_docs_to = data.docs_dir;
 
