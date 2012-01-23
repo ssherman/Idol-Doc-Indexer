@@ -10,7 +10,7 @@ var querystring = require('querystring');
 var SqsPoller = require('./aws_sqs_poller');
 
 // read preferences json file from disk
-var pref_file = fs.readFileSync('sqs_preferences.json', 'utf8');
+var pref_file = fs.readFileSync(__dirname + '/sqs_preferences.json', 'utf8');
 var data = JSON.parse(pref_file);
 
 var aws_key = data.aws_key;
