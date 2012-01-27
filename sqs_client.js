@@ -23,10 +23,8 @@ var options = {
 	'path': sqs_queue_path
 };
 
-var sqs_poller = new SqsPoller(aws_key, aws_secret_key, options, 1000, 30000, 5000);
-
-// this event is called when there are new messages on the queue
-sqs_poller.on('new_messages', function(message, sqs) {
+// processes messages off of the sqs queue
+function handle_new_messages(message, sqs) {
     var message_id = message.MessageId;
 
     // the body is json
@@ -53,13 +51,7 @@ sqs_poller.on('new_messages', function(message, sqs) {
            console.log("delete result: " + result);
         });
     }
-
-});
-
-// this handles error cases like if sqs can not connect at all or the queue is invalid
-sqs_poller.on('error', function(message, sqs) {
-   console.log('Error: ' + message); 
-});
+}
 
 // Unindex a document from autonomy. 
 // json_data - data required to unindex an autonomy db
@@ -192,5 +184,18 @@ function index(json_data, receipt_handle, sqs) {
     }).end();
 
 }
+
+
+var sqs_poller = new SqsPoller(aws_key, aws_secret_key, options, 1000, 30000, 5000);
+
+// this event is called when there are new messages on the queue
+sqs_poller.on('new_messages', handle_new_messages);
+
+// this handles error cases like if sqs can not connect at all or the queue is invalid
+sqs_poller.on('error', function(message, sqs) {
+   console.log('Error: ' + message); 
+   sqs_poller.start();
+});
+
 sqs_poller.start();
 
