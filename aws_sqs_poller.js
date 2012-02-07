@@ -27,7 +27,11 @@ AwsSqsPoller.prototype.getMessages = function getMessages(timeout) {
     self.sqs.call('ReceiveMessage', {'MaxNumberOfMessages': 10}, function(result) {
 
         if ( result == null || result.Error ) {
-            self.emit('error', result.Error.Message, self.sqs);
+            if ( result == null ) {
+                self.emit('error', "sqs response nil. Does the queue_path have a '/' in front of it?", self.sqs);
+            } else {
+                self.emit('error', result.Error.Message, self.sqs);
+            }
             return true;
         }
 
