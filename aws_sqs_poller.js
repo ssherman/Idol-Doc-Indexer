@@ -33,6 +33,10 @@ AwsSqsPoller.prototype.getMessages = function getMessages(timeout) {
 
         var messages = result.ReceiveMessageResult.Message;
 
+        if ( messages != "undefined" && messages != null && !Array.isArray(messages) ) {
+            messages = [messages];
+        }
+
         // sqs is weird. sometimes it returns undefined and then sometimes it returns
         // an object with a length of undefined
         if ( messages && typeof messages.length != "undefined") {
