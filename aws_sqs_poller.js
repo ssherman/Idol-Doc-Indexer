@@ -26,7 +26,7 @@ AwsSqsPoller.prototype._restart = function restart(timeout) {
 AwsSqsPoller.prototype.getMessages = function getMessages(timeout) {
     self.sqs.call('ReceiveMessage', {'MaxNumberOfMessages': 10}, function(result) {
 
-        if ( result.Error ) {
+        if ( result == null || result.Error ) {
             self.emit('error', result.Error.Message, self.sqs);
             return true;
         }
